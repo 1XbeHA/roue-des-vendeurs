@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>La Roue des Vendeurs</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <div class="app">
+
+    <header>
+      <div>
+        <p class="eyebrow">ACTIVITÉ • TECHNIQUES DE VENTE</p>
+
+        <h1>🎡 La Roue des Vendeurs</h1>
+
+        <p class="subtitle">
+          Tournez la roue et relevez le défi !
+        </p>
+      </div>
+
+      <button id="resetBtn" class="reset-btn">
+        ↻ Réinitialiser
+      </button>
+    </header>
+
+
+    <main>
+
+      <!-- ROUE -->
+
+      <section class="wheel-card">
+
+        <div class="pointer">▼</div>
+
+        <canvas id="wheel" width="560" height="560"></canvas>
+
+        <button id="spinBtn" class="spin-btn">
+          TOURNER
+        </button>
+
+      </section>
+
+
+      <!-- RESULTAT -->
+
+      <section class="challenge-card">
+
+        <div class="tag">
+          🎯 DÉFI DU VENDEUR
+        </div>
+
+        <div id="result" class="result">
+
+          <span>
+            Appuyez sur « TOURNER »
+          </span>
+
+          <small>
+            La roue choisira votre situation de vente.
+          </small>
+
+        </div>
+
+
+        <div id="timerBox" class="timer hidden">
+          ⏱ <span id="timer">45</span>s
+        </div>
+
+
+        <button id="startBtn" class="start-btn hidden">
+          ▶ COMMENCER LE DÉFI
+        </button>
+
+      </section>
+
+    </main>
+
+
+    <footer>
+      Produit • Client • Objection • Objectif
+    </footer>
+
+  </div>
+
+
+  <script src="script.js"></script>
+
+</body>
+</html>
