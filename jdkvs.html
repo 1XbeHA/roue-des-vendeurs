@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>La Roue des Vendeurs</title>
+
+<style>
+
+*{
+box-sizing:border-box;
+}
+
+body{
+margin:0;
+font-family:Arial, sans-serif;
+background:#f4f6fb;
+color:#172033;
+min-height:100vh;
+}
+
+.app{
+max-width:1100px;
+margin:auto;
+padding:25px;
+}
+
+header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:20px;
+}
+
+.eyebrow{
+font-size:12px;
+font-weight:bold;
+letter-spacing:2px;
+color:#6366f1;
+margin:0 0 8px;
+}
+
+h1{
+margin:0;
+font-size:32px;
+}
+
+.subtitle{
+color:#667085;
+margin-top:6px;
+}
+
+.reset{
+background:white;
+border:1px solid #ddd;
+padding:11px 17px;
+border-radius:12px;
+font-weight:bold;
+cursor:pointer;
+}
+
+main{
+display:grid;
+grid-template-columns:560px 1fr;
+gap:30px;
+align-items:center;
+}
+
+.wheel-box{
+position:relative;
+background:white;
+padding:20px;
+border-radius:28px;
+box-shadow:0 15px 40px rgba(0,0,0,.12);
+}
+
+canvas{
+display:block;
+width:100%;
+}
+
+.pointer{
+position:absolute;
+top:3px;
+left:50%;
+transform:translateX(-50%);
+font-size:40px;
+color:#ef4444;
+z-index:5;
+}
+
+.spin{
+position:absolute;
+left:50%;
+top:50%;
+transform:translate(-50%,-50%);
+width:120px;
+height:120px;
+border-radius:50%;
+border:8px solid white;
+background:#6366f1;
+color:white;
+font-weight:bold;
+font-size:18px;
+cursor:pointer;
+box-shadow:0 8px 25px rgba(99,102,241,.4);
+}
+
+.spin:disabled{
+opacity:.6;
+}
+
+.card{
+background:#172033;
+color:white;
+padding:35px;
+border-radius:28px;
+min-height:320px;
+display:flex;
+flex-direction:column;
+justify-content:center;
+}
+
+.tag{
+color:#a5b4fc;
+font-size:12px;
+font-weight:bold;
+letter-spacing:2px;
+margin-bottom:20px;
+}
+
+.result{
+font-size:20px;
+line-height:1.6;
+}
+
+.result small{
+display:block;
+color:#b9c1d1;
+margin-top:12px;
+}
+
+.start{
+margin-top:20px;
+background:#6366f1;
+color:white;
+border:0;
+padding:15px;
+border-radius:12px;
+font-weight:bold;
+cursor:pointer;
+}
+
+.hidden{
+display:none;
+}
+
+.timer{
+margin-top:15px;
+font-size:30px;
+font-weight:bold;
+color:#fbbf24;
+}
+
+footer{
+text-align:center;
+margin-top:20px;
+color:#777;
+}
+
+@media(max-width:850px){
+
+main{
+grid-template-columns:1fr;
+}
+
+h1{
+font-size:25px;
+}
+
+}
+
+</style>
+</head>
+
+
+<body>
+
+<div class="app">
+
+<header>
+
+<div>
+
+<p class="eyebrow">
+ACTIVITÉ • TECHNIQUES DE VENTE
+</p>
+
+<h1>
+🎡 La Roue des Vendeurs
+</h1>
+
+<p class="subtitle">
+Tournez la roue et relevez le défi !
+</p>
+
+</div>
+
+<button class="reset" onclick="resetWheel()">
+↻ Réinitialiser
+</button>
+
+</header>
+
+
+<main>
+
+
+<!-- ROUE -->
+
+<section class="wheel-box">
+
+<div class="pointer">
+▼
+</div>
+
+<canvas
+id="wheel"
+width="560"
+height="560">
+</canvas>
+
+<button
+id="spinButton"
+class="spin"
+onclick="spinWheel()">
+
+TOURNER
+
+</button>
+
+</section>
+
+
+<!-- RESULTAT -->
+
+<section class="card">
+
+<div class="tag">
+🎯 DÉFI DU VENDEUR
+</div>
+
+<div
+id="result"
+class="result">
+
+<span>
+Appuyez sur « TOURNER »
+</span>
+
+<small>
+La roue choisira votre situation de vente.
+</small>
+
+</div>
+
+
+<div
+id="timer"
+class="timer hidden">
+
+⏱ <span id="seconds">45</span>s
+
+</div>
+
+
+<button
+id="start"
+class="start hidden"
+onclick="startTimer()">
+
+▶ COMMENCER LE DÉFI
+
+</button>
+
+</section>
+
+</main>
+
+
+<footer>
+
+Produit • Client • Objection • Objectif
+
+</footer>
+
+</div>
+
+
+<script>
+
+const canvas =
+document.getElementById("wheel");
+
+const ctx =
+canvas.getContext("2d");
+
+
+/* =========================
+   SITUATIONS
+========================= */
+
+const situations = [
+
+{
+product:"🎧 Écouteurs",
+client:"👨‍🎓 Étudiant(e)",
+objection:"❌ « C’est trop cher ! »",
+objective:"🎯 Conclure la vente"
+},
+
+{
+product:"💻 Ordinateur portable",
+client:"👩‍💼 Professionnel(le)",
+objection:"❌ « Je vais réfléchir. »",
+objective:"🎯 Convaincre le client"
+},
+
+{
+product:"📱 Smartphone",
+client:"🧑 Jeune client(e)",
+objection:"❌ « J’ai trouvé moins cher ailleurs. »",
+objective:"🎯 Traiter l’objection"
+},
+
+{
+product:"🎒 Sac à dos",
+client:"👨‍🎓 Étudiant(e)",
+objection:"❌ « Je n’en ai pas besoin. »",
+objective:"🎯 Poser les bonnes questions"
+},
+
+{
+product:"⌚ Montre connectée",
+client:"🏃 Sportif(ve)",
+objection:"❌ « Pourquoi cette marque ? »",
+objective:"🎯 Argumenter"
+},
+
+{
+product:"🌸 Parfum",
+client:"🎁 Client(e) qui cherche un cadeau",
+objection:"❌ « Je ne suis pas sûr(e). »",
+objective:"🎯 Faire une recommandation"
+},
+
+{
+product:"🎧 Casque audio",
+client:"👨‍💼 Salarié(e)",
+objection:"❌ « C’est hors de mon budget. »",
+objective:"🎯 Proposer une solution"
+},
+
+{
+product:"📷 Appareil photo",
+client:"✈️ Touriste",
+objection:"❌ « Je dois comparer. »",
+objective:"🎯 Créer un sentiment de confiance"
+}
+
+];
+
+
+const colors = [
+
+"#6366f1",
+"#8b5cf6",
+"#ec4899",
+"#f59e0b",
+"#10b981",
+"#06b6d4",
+"#3b82f6",
+"#ef4444"
+
+];
+
+
+let angle = 0;
+
+let spinning = false;
+
+
+/* =========================
+   DRAW
+========================= */
+
+function drawWheel(){
+
+const cx = 280;
+
+const cy = 280;
+
+const radius = 260;
+
+const section =
+Math.PI * 2 / situations.length;
+
+
+ctx.clearRect(
+0,
+0,
+560,
+560
+);
+
+
+for(
+let i=0;
+i<situations.length;
+i++
+){
+
+const start =
+angle + i * section;
+
+const end =
+start + section;
+
+
+ctx.beginPath();
+
+ctx.moveTo(
+cx,
+cy
+);
+
+ctx.arc(
+cx,
+cy,
+radius,
+start,
+end
+);
+
+ctx.closePath();
+
+ctx.fillStyle =
+colors[i];
+
+ctx.fill();
+
+ctx.strokeStyle =
+"white";
+
+ctx.lineWidth =
+4;
+
+ctx.stroke();
+
+
+/* TEXT */
+
+ctx.save();
+
+ctx.translate(
+cx,
+cy
+);
+
+ctx.rotate(
+start + section/2
+);
+
+ctx.fillStyle =
+"white";
+
+ctx.font =
+"bold 15px Arial";
+
+ctx.textAlign =
+"right";
+
+
+ctx.fillText(
+situationName(i),
+radius-20,
+5
+);
+
+ctx.restore();
+
+}
+
+
+/* CENTER */
+
+ctx.beginPath();
+
+ctx.arc(
+cx,
+cy,
+62,
+0,
+Math.PI*2
+);
+
+ctx.fillStyle =
+"white";
+
+ctx.fill();
+
+}
+
+
+/* =========================
+   TEXTE ROUE
+========================= */
+
+function situationName(i){
+
+const names = [
+
+"🎧 Écouteurs",
+
+"💻 Ordinateur",
+
+"📱 Smartphone",
+
+"🎒 Sac à dos",
+
+"⌚ Montre",
+
+"🌸 Parfum",
+
+"🎧 Casque",
+
+"📷 Appareil"
+
+];
+
+return names[i];
+
+}
+
+
+/* =========================
+   SPIN
+========================= */
+
+function spinWheel(){
+
+if(spinning)
+return;
+
+
+spinning=true;
+
+document.getElementById(
+"spinButton"
+).disabled=true;
+
+
+document.getElementById(
+"start"
+).classList.add("hidden");
+
+
+const winner =
+Math.floor(
+Math.random() *
+situations.length
+);
+
+
+const section =
+Math.PI*2 /
+situations.length;
+
+
+const target =
+-(winner*section)
+-section/2
+-Math.PI/2;
+
+
+const startAngle =
+angle;
+
+const finalAngle =
+target +
+Math.PI*2*6;
+
+
+const duration =
+4000;
+
+const startTime =
+performance.now();
+
+
+function animate(time){
+
+let progress =
+(time-startTime) /
+duration;
+
+
+if(progress>1)
+progress=1;
+
+
+const easing =
+1-Math.pow(
+1-progress,
+4
+);
+
+
+angle =
+startAngle +
+(finalAngle-startAngle)
+*easing;
+
+
+drawWheel();
+
+
+if(progress<1){
+
+requestAnimationFrame(
+animate
+);
+
+}else{
+
+spinning=false;
+
+document.getElementById(
+"spinButton"
+).disabled=false;
+
+
+showResult(
+situations[winner]
+);
+
+}
+
+}
+
+
+requestAnimationFrame(
+animate
+);
+
+}
+
+
+/* =========================
+   RESULTAT
+========================= */
+
+function showResult(data){
+
+document.getElementById(
+"result"
+).innerHTML = `
+
+<div>
+📦 <b>Produit :</b>
+${data.product}
+</div>
+
+<div>
+👤 <b>Client :</b>
+${data.client}
+</div>
+
+<div>
+❌ <b>Objection :</b>
+${data.objection}
+</div>
+
+<div>
+🎯 <b>Objectif :</b>
+${data.objective}
+</div>
+
+`;
+
+document.getElementById(
+"start"
+).classList.remove(
+"hidden"
+);
+
+}
+
+
+/* =========================
+   TIMER
+========================= */
+
+let timerInterval;
+
+
+function startTimer(){
+
+let seconds=45;
+
+
+document.getElementById(
+"timer"
+).classList.remove(
+"hidden"
+);
+
+
+document.getElementById(
+"start"
+).classList.add(
+"hidden"
+);
+
+
+document.getElementById(
+"seconds"
+).textContent =
+seconds;
+
+
+clearInterval(
+timerInterval
+);
+
+
+timerInterval =
+setInterval(
+
+function(){
+
+seconds--;
+
+document.getElementById(
+"seconds"
+).textContent =
+seconds;
+
+
+if(seconds<=0){
+
+clearInterval(
+timerInterval
+);
+
+document.getElementById(
+"timer"
+).innerHTML =
+"⏰ Temps écoulé !";
+
+}
+
+},
+
+1000
+
+);
+
+}
+
+
+/* =========================
+   RESET
+========================= */
+
+function resetWheel(){
+
+clearInterval(
+timerInterval
+);
+
+angle=0;
+
+spinning=false;
+
+
+document.getElementById(
+"spinButton"
+).disabled=false;
+
+
+document.getElementById(
+"timer"
+).classList.add(
+"hidden"
+);
+
+
+document.getElementById(
+"start"
+).classList.add(
+"hidden"
+);
+
+
+document.getElementById(
+"result"
+).innerHTML = `
+
+<span>
+Appuyez sur « TOURNER »
+</span>
+
+<small>
+La roue choisira votre situation de vente.
+</small>
+
+`;
+
+
+drawWheel();
+
+}
+
+
+/* DRAW FIRST TIME */
+
+drawWheel();
+
+</script>
+
+</body>
+</html>
