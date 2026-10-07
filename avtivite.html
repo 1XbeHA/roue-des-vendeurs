@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>La Roue des Vendeurs</title>
+<style>
+:root{
+  --blue:#2563eb;
+  --blue-dark:#1e3a8a;
+  --rose:#ec4899;
+  --ink:#172033;
+  --muted:#64748b;
+  --card:#ffffff;
+  --bg:#f6f8fc;
+  --line:#e7eaf0;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:Inter,Segoe UI,Arial,sans-serif;
+  background:linear-gradient(135deg,#f8fbff,#fff7fb);
+  color:var(--ink);
+}
+header{
+  text-align:center;
+  padding:28px 18px 14px;
+}
+.badge{
+  display:inline-block;
+  padding:7px 13px;
+  border-radius:999px;
+  background:#eef4ff;
+  color:var(--blue-dark);
+  font-size:13px;
+  font-weight:800;
+  letter-spacing:.4px;
+}
+h1{
+  margin:10px 0 5px;
+  font-size:clamp(30px,5vw,48px);
+}
+.subtitle{color:var(--muted);margin:0}
+.app{
+  width:min(1180px,94%);
+  margin:20px auto 50px;
+  display:grid;
+  grid-template-columns:minmax(330px,560px) 1fr;
+  gap:26px;
+  align-items:start;
+}
+.card{
+  background:rgba(255,255,255,.92);
+  border:1px solid var(--line);
+  border-radius:24px;
+  box-shadow:0 18px 45px rgba(30,58,138,.10);
+}
+.wheel-card{padding:22px;text-align:center}
+.wheel-wrap{
+  position:relative;
+  width:min(500px,100%);
+  aspect-ratio:1;
+  margin:auto;
+}
+canvas{width:100%;height:100%;display:block}
+.pointer{
+  position:absolute;
+  top:-3px;
+  left:50%;
+  transform:translateX(-50%);
+  width:0;height:0;
+  border-left:17px solid transparent;
+  border-right:17px solid transparent;
+  border-top:0;
+  border-bottom:36px solid #172033;
+  filter:drop-shadow(0 4px 3px rgba(0,0,0,.15));
+  z-index:3;
+}
+.center-dot{
+  position:absolute;
+  inset:50% auto auto 50%;
+  transform:translate(-50%,-50%);
+  width:68px;height:68px;border-radius:50%;
+  background:white;border:7px solid #172033;
+  box-shadow:0 5px 15px rgba(0,0,0,.15);
+  z-index:2;
+}
+button{
+  border:0;
+  border-radius:14px;
+  padding:13px 20px;
+  font-size:15px;
+  font-weight:800;
+  cursor:pointer;
+  transition:.2s;
+}
+button:hover{transform:translateY(-1px)}
+.primary{
+  color:white;
+  background:linear-gradient(135deg,var(--blue),var(--rose));
+  box-shadow:0 10px 22px rgba(37,99,235,.20);
+}
+.secondary{
+  background:#f1f5f9;color:#334155;
+}
+.actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px}
+.info{
+  margin-top:15px;
+  font-size:13px;color:var(--muted);
+}
+.result-card{padding:28px}
+.step{
+  display:inline-block;
+  background:#fff0f7;color:#be185d;
+  padding:6px 11px;border-radius:999px;
+  font-size:12px;font-weight:900;
+}
+.result-card h2{font-size:28px;margin:13px 0 7px}
+.challenge{
+  background:#f8fafc;
+  border-left:5px solid var(--blue);
+  padding:18px;
+  border-radius:14px;
+  line-height:1.65;
+  font-size:17px;
+}
+.instruction{
+  color:var(--muted);
+  margin-top:12px;
+  line-height:1.5;
+}
+.reveal{
+  display:none;
+  margin-top:20px;
+  border-top:1px solid var(--line);
+  padding-top:20px;
+}
+.method-name{font-size:23px;font-weight:900;color:var(--blue-dark)}
+.method-desc{line-height:1.6;color:#475569}
+.progress{
+  height:8px;background:#e8edf5;border-radius:99px;overflow:hidden;margin:15px 0 4px;
+}
+.progress > div{
+  height:100%;
+  width:0;
+  background:linear-gradient(90deg,var(--blue),var(--rose));
+  transition:width .4s;
+}
+.small{font-size:12px;color:var(--muted)}
+@media(max-width:850px){
+  .app{grid-template-columns:1fr}
+  .result-card{order:2}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <span class="badge">ACTIVITÉ • TECHNIQUES DE VENTE</span>
+  <h1>🎡 La Roue des Vendeurs</h1>
+  <p class="subtitle">Tournez la roue et relevez le défi !</p>
+</header>
+
+<main class="app">
+  <section class="card wheel-card">
+    <div class="wheel-wrap">
+      <div class="pointer"></div>
+      <canvas id="wheel" width="900" height="900"></canvas>
+      <div class="center-dot"></div>
+    </div>
+
+    <div class="actions">
+      <button class="primary" id="spinBtn">🎯 TOURNER</button>
+      <button class="secondary" id="resetBtn">↻ Réinitialiser</button>
+    </div>
+
+    <div class="progress"><div id="progressBar"></div></div>
+    <div class="small" id="progressText">Défi 1 sur 15</div>
+    <p class="info">Chaque tour avance dans l'ordre des méthodes de votre présentation.</p>
+  </section>
+
+  <section class="card result-card">
+    <span class="step" id="stepLabel">PRÊT ?</span>
+    <h2 id="resultTitle">Défi du vendeur</h2>
+    <div class="challenge" id="challenge">
+      Appuyez sur « TOURNER » pour commencer l'activité.
+    </div>
+    <p class="instruction" id="instruction">
+      Le participant doit résoudre la situation sans voir immédiatement le nom de la méthode.
+      Après sa réponse, cliquez sur « Révéler la méthode ».
+    </p>
+
+    <div class="actions" style="justify-content:flex-start">
+      <button class="secondary" id="revealBtn" style="display:none">💡 Révéler la méthode</button>
+    </div>
+
+    <div class="reveal" id="revealBox">
+      <div class="small">MÉTHODE CORRESPONDANTE</div>
+      <div class="method-name" id="methodName"></div>
+      <p class="method-desc" id="methodDesc"></p>
+    </div>
+  </section>
+</main>
+
+<script>
+const items = [
+  {
+    method:"CAP",
+    challenge:"Un client cherche un ordinateur portable pour ses études. Présentez-lui un modèle en reliant ses caractéristiques techniques aux avantages qu’il peut apporter.",
+    desc:"La méthode CAP est une technique d’argumentation commerciale qui sert à structurer un discours de vente pour convaincre un client en reliant les faits aux bénéfices."
+  },
+  {
+    method:"CAB",
+    challenge:"Un client hésite entre deux smartphones. Présentez-lui celui que vous recommandez en reliant les caractéristiques du produit à ses avantages et à ce qu’il peut réellement lui apporter.",
+    desc:"La méthode CAB est une technique de vente qui permet de structurer un argumentaire commercial pour convaincre un client en reliant les faits techniques aux émotions et aux besoins réels."
+  },
+  {
+    method:"SPANCO",
+    challenge:"Vous devez accompagner un prospect depuis le premier contact jusqu’à la commande. Jouez rapidement les différentes étapes nécessaires pour faire avancer la vente.",
+    desc:"Elle permet de suivre le cycle de vente de bout en bout à travers 6 étapes clés : Suspicion (prospection), Prospective (approche), Analyse (découverte), Negociation (offre), Closing (conclusion), Order (commande)."
+  },
+  {
+    method:"SONCAS",
+    challenge:"Une cliente veut acheter un ordinateur mais elle hésite. Posez-lui quelques questions et essayez d’identifier ce qui pourrait principalement motiver son achat.",
+    desc:"Elle analyse les motivations d'achat du client selon 6 leviers psychologiques : Sécurité, Orgueil, Nouveauté, Confort, Argent, Sympathie."
+  },
+  {
+    method:"AIDA",
+    challenge:"Vous devez présenter un nouveau smartphone à une classe. Faites un mini-pitch qui attire l’attention, donne envie d’en savoir plus, crée le désir et pousse à passer à l’action.",
+    desc:"Un classique du marketing et de la vente pour capter l’attention : Attention, Intérêt, Désir, Action."
+  },
+  {
+    method:"Écoute active",
+    challenge:"Un client vous explique qu’il n’est pas satisfait de son ancien ordinateur. Écoutez son problème, reformulez ce que vous avez compris et proposez une solution adaptée.",
+    desc:"En vente, elle consiste à écouter attentivement son client et à analyser ses mots, ses émotions et ses besoins profonds pour lui proposer une solution personnalisée."
+  },
+  {
+    method:"SPIN Selling",
+    challenge:"Un client veut améliorer son matériel informatique. Posez-lui des questions pour comprendre sa situation, son problème, les conséquences du problème et le besoin qu’une solution pourrait satisfaire.",
+    desc:"Elle repose sur un questionnement en 4 étapes pour identifier les besoins : Situation, Problème, Implication, Need-payoff (besoin à combler)."
+  },
+  {
+    method:"Storytelling",
+    challenge:"Vous devez vendre un produit banal, par exemple une gourde. Au lieu de simplement donner ses caractéristiques, racontez une courte histoire qui donne envie au client de l’utiliser.",
+    desc:"C’est une méthode de communication qui consiste à transformer un message marketing ou une idée en un récit captivant pour susciter l’émotion et convaincre."
+  },
+  {
+    method:"SIMAC",
+    challenge:"Un client rencontre un problème avec son organisation informatique. Présentez-lui une solution en suivant un déroulé structuré : situation, idée, mécanisme, avantages et conclusion.",
+    desc:"Un déroulé d'entretien en 5 phases : Situation, Idée, Mécanisme, Avantages, Conclusion."
+  },
+  {
+    method:"MEDDIC",
+    challenge:"Vous êtes commercial dans une entreprise qui vend une solution informatique à une autre entreprise. Avant de proposer votre offre, quelles informations devez-vous chercher pour qualifier correctement le projet et ses décideurs ?",
+    desc:"Très utilisée en B2B complexe, elle qualifie les comptes via : Metrics (mesure du ROI), Economic buyer (décideur financier), Decision criteria, Decision process, Identify pain, Champion."
+  },
+  {
+    method:"Vente consultative (Customer Centric Selling)",
+    challenge:"Un client ne sait pas exactement quel produit choisir. Ne commencez pas par présenter un produit : cherchez d’abord à comprendre son problème et accompagnez-le vers une solution.",
+    desc:"Le vendeur agit comme un conseiller à l'écoute active, privilégiant la résolution du problème du client plutôt que la simple présentation du produit."
+  },
+  {
+    method:"BANT",
+    challenge:"Vous avez un prospect intéressé par une solution informatique. Posez des questions pour savoir s’il a le budget, qui décide, quel est son besoin et quand il souhaite mettre la solution en place.",
+    desc:"Elle qualifie rapidement un prospect en vérifiant son Budget, l’Autorité du décideur, le Niveau de besoin (Need) et le Timing (calendrier)."
+  },
+  {
+    method:"Challenger Sale",
+    challenge:"Un client pense que son problème informatique peut être résolu par une petite amélioration. Challengez son raisonnement, apportez une nouvelle vision du problème et défendez votre recommandation.",
+    desc:"Le commercial adopte une posture d'expert qui bouscule le client, le challenge intellectuellement et lui apporte une vision novatrice de son problème."
+  },
+  {
+    method:"BEBEDC",
+    challenge:"Une entreprise veut acheter une solution informatique. Avant de faire votre proposition, identifiez les éléments essentiels du projet : besoin, environnement, budget, échéance, décideur et critères de choix.",
+    desc:"Elle analyse le projet d'achat selon le Besoin, l'Environnement, le Budget, l'Échéance, le Décideur et les Critères de choix."
+  },
+  {
+    method:"BATNA & MESORE",
+    challenge:"Un client négocie fortement le prix de votre offre. Avant d’accepter sa proposition, déterminez quelle solution de rechange vous avez et jusqu’où vous pouvez négocier sans perdre de valeur.",
+    desc:"Issue de la négociation (Harvard), elle définit la Mesure de Solution de Rechange (BATNA en anglais) pour savoir jusqu'où négocier sans perdre de valeur."
+  }
+];
+
+const canvas = document.getElementById("wheel");
+const ctx = canvas.getContext("2d");
+const spinBtn = document.getElementById("spinBtn");
+const resetBtn = document.getElementById("resetBtn");
+const revealBtn = document.getElementById("revealBtn");
+const revealBox = document.getElementById("revealBox");
+const methodName = document.getElementById("methodName");
+const methodDesc = document.getElementById("methodDesc");
+const resultTitle = document.getElementById("resultTitle");
+const challenge = document.getElementById("challenge");
+const stepLabel = document.getElementById("stepLabel");
+const instruction = document.getElementById("instruction");
+const progressBar = document.getElementById("progressBar");
+const progressText = document.getElementById("progressText");
+
+let current = 0;
+let angle = 0;
+let spinning = false;
+
+const colors = [
+ "#2563eb","#ec4899","#14b8a6","#f59e0b","#8b5cf6",
+ "#06b6d4","#f97316","#10b981","#6366f1","#e11d48"
+];
+
+function drawWheel(){
+  const n = items.length;
+  const cx = canvas.width/2, cy = canvas.height/2;
+  const r = canvas.width*0.46;
+  const arc = (Math.PI*2)/n;
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  for(let i=0;i<n;i++){
+    const start = angle + i*arc;
+    const end = start + arc;
+
+    ctx.beginPath();
+    ctx.moveTo(cx,cy);
+    ctx.arc(cx,cy,r,start,end);
+    ctx.closePath();
+    ctx.fillStyle = colors[i % colors.length];
+    ctx.fill();
+
+    ctx.strokeStyle = "rgba(255,255,255,.9)";
+    ctx.lineWidth = 5;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.rotate(start + arc/2);
+    ctx.textAlign = "right";
+    ctx.fillStyle = "#fff";
+    ctx.font = "800 25px Segoe UI, Arial";
+    ctx.fillText("Défi " + (i+1), r-30, 9);
+    ctx.restore();
+  }
+
+  ctx.beginPath();
+  ctx.arc(cx,cy,43,0,Math.PI*2);
+  ctx.fillStyle="#fff";
+  ctx.fill();
+  ctx.lineWidth=8;
+  ctx.strokeStyle="#172033";
+  ctx.stroke();
+}
+
+function updateProgress(){
+  const done = Math.min(current, items.length);
+  progressBar.style.width = (done/items.length*100) + "%";
+  progressText.textContent =
+    current < items.length ? `Défi ${current+1} sur ${items.length}` : "Tous les défis sont terminés 🎉";
+}
+
+function showChallenge(index){
+  const item = items[index];
+  stepLabel.textContent = `DÉFI ${index+1}`;
+  resultTitle.textContent = "🎯 Situation de vente";
+  challenge.textContent = item.challenge;
+  instruction.textContent =
+    "Le participant doit proposer sa réponse ou jouer la scène. Le nom de la méthode reste caché jusqu’à la révélation.";
+  revealBtn.style.display = "inline-block";
+  revealBox.style.display = "none";
+  methodName.textContent = item.method;
+  methodDesc.textContent = item.desc;
+  updateProgress();
+}
+
+function revealMethod(){
+  revealBox.style.display = "block";
+  instruction.textContent =
+    "Maintenant, expliquez la méthode dans votre présentation et montrez comment la réponse du participant peut être améliorée avec cette méthode.";
+}
+
+function spin(){
+  if(spinning || current >= items.length) return;
+  spinning = true;
+  spinBtn.disabled = true;
+  revealBtn.style.display = "none";
+  revealBox.style.display = "none";
+
+  const n = items.length;
+  const arc = (Math.PI*2)/n;
+
+  // Le segment choisi est toujours celui correspondant au prochain défi.
+  // On ajoute plusieurs tours pour garder l'effet de roulette.
+  const targetCenter = -Math.PI/2;
+  const segmentCenter = current*arc + arc/2;
+  const desiredAngle = targetCenter - segmentCenter;
+  const normalized = ((desiredAngle-angle)%(Math.PI*2)+Math.PI*2)%(Math.PI*2);
+  const extraTurns = (5 + Math.floor(Math.random()*2))*Math.PI*2;
+  const finalAngle = angle + extraTurns + normalized;
+
+  const startAngle = angle;
+  const duration = 4200;
+  const startTime = performance.now();
+
+  function animate(now){
+    const t = Math.min(1,(now-startTime)/duration);
+    const ease = 1-Math.pow(1-t,4);
+    angle = startAngle + (finalAngle-startAngle)*ease;
+    drawWheel();
+
+    if(t<1){
+      requestAnimationFrame(animate);
+    }else{
+      angle = finalAngle;
+      drawWheel();
+      showChallenge(current);
+      current++;
+      spinning = false;
+      spinBtn.disabled = false;
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+function reset(){
+  current=0;
+  angle=0;
+  spinning=false;
+  spinBtn.disabled=false;
+  stepLabel.textContent="PRÊT ?";
+  resultTitle.textContent="Défi du vendeur";
+  challenge.textContent="Appuyez sur « TOURNER » pour commencer l'activité.";
+  instruction.textContent="Le participant doit résoudre la situation sans voir immédiatement le nom de la méthode. Après sa réponse, cliquez sur « Révéler la méthode ».";
+  revealBtn.style.display="none";
+  revealBox.style.display="none";
+  updateProgress();
+  drawWheel();
+}
+
+spinBtn.addEventListener("click",spin);
+resetBtn.addEventListener("click",reset);
+revealBtn.addEventListener("click",revealMethod);
+
+drawWheel();
+updateProgress();
+</script>
+</body>
+</html>
